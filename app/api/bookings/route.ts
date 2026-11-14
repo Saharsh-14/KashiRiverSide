@@ -1,13 +1,16 @@
 import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { failure, hash, sameOrigin, supabase } from "../../../lib/server";
+import { dailyAvailability } from '../../../lib/availability';
 
 async function currentBooking() {
  const token=(await cookies()).get("hotel_booking")?.value;
  if(!token) throw new Error("Booking access unavailable in this browser");
  const rows=await supabase(`/rest/v1/bookings?access_hash=eq.${hash(token)}&select=id,room_type,check_in,check_out,total,advance_due,status`);
  if(!rows.length) throw new Error("Booking not found");
- return rows[0];
+ const booking=rows[0];
+ const days=booking.status==='payment_pending'?await dailyAvailability(booking.room_type,booking.check_in,booking.check_out):[];
+ return {...booking,can_pay:booking.status==='payment_pending'&&days.length>0&&days.every(d=>d.vacant>0)};
 }
 export async function GET(){try{return Response.json(await currentBooking());}catch(e){return failure(e,404);}}
 export async function POST(request:Request) {
@@ -31,7 +34,12 @@ export async function POST(request:Request) {
   if(typeof data.email!=="string"||data.email.length>254||(data.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))||typeof data.requests!=="string"||data.requests.length>1000) throw new Error("Check email and special requests");
   const [room]=await supabase(`/rest/v1/room_types?code=eq.${data.room}&select=nightly_rate,inventory`);
   const overlaps=await supabase(`/rest/v1/bookings?room_type=eq.${data.room}&status=eq.confirmed&check_in=lt.${data.departure}&check_out=gt.${data.arrival}&select=check_in,check_out`);
-  for(let day=Date.parse(data.arrival);day<Date.parse(data.departure);day+=86400000){if(overlaps.filter((b:{check_in:string;check_out:string})=>Date.parse(b.check_in)<=day&&Date.parse(b.check_out)>day).length>=room.inventory)throw new Error("Room unavailable for these dates");}
+  const overrides=await supabase(`/rest/v1/room_availability?room_type=eq.${data.room}&stay_date=gte.${data.arrival}&stay_date=lt.${data.departure}&select=stay_date,available_rooms`);
+  for(let day=Date.parse(data.arrival);day<Date.parse(data.departure);day+=86400000){
+   const date=new Date(day).toISOString().slice(0,10);
+   const capacity=overrides.find((a:{stay_date:string})=>a.stay_date===date)?.available_rooms ?? room.inventory;
+   if(overlaps.filter((b:{check_in:string;check_out:string})=>Date.parse(b.check_in)<=day&&Date.parse(b.check_out)>day).length>=capacity)throw new Error("Room unavailable for these dates. Please choose different dates or contact the hotel.");
+  }
   const total=nights*(room.nightly_rate+(data.extra?50000:0));
   const token=randomBytes(32).toString("hex");
   await supabase("/rest/v1/bookings",{method:"POST",body:JSON.stringify({room_type:data.room,check_in:data.arrival,check_out:data.departure,adults:data.adults,children:data.children,extra_mattress:data.extra,guest_name:data.name.trim(),phone:data.phone,email:data.email||null,special_request:data.requests||null,policy_version:"2026-11-14",nightly_rate:room.nightly_rate,total,advance_due:Math.round(total*.3),access_hash:hash(token)})});

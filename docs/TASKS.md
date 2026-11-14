@@ -9,6 +9,12 @@
 
 ## Current Project Status
 
+- Availability follow-up: booking creation respects daily overrides; the guest
+  status page rechecks availability before displaying QR instructions; the admin
+  can inspect daily total, online limit, confirmed and vacant counts. Production
+  build and concurrent last-room confirmation/admin-edit integration checks pass.
+  Payment reference submission stays available for guests who already paid.
+
 - Responsive desktop/mobile browser verification completed for the home, booking,
   booking status, policies, and admin routes (2026-11-15).
 - Production build and the complete HTTP booking/payment/admin integration suite

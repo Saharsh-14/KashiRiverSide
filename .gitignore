@@ -1,4 +1,6 @@
 node_modules/
+supabase/.temp/
+*.tsbuildinfo
 .next/
 .next-build/
 .build-backups/

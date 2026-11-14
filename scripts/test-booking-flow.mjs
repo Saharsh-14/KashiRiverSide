@@ -30,7 +30,8 @@ try{
  const input={arrival:'2098-03-10',departure:'2098-03-12',room:'non_ac',adults:2,children:0,extra:true,name:'AUTOMATED TEST ONLY',phone:'0000000000',email:'',requests:'Temporary integration test',accepted:true};
  assert.equal((await api('/api/bookings',{data:{...input,departure:input.arrival}})).r.status,400);
  async function book(){const result=await api('/api/bookings',{data:input});assert.equal(result.r.status,201,JSON.stringify(result.body));ids.push(result.body.id);assert.equal(result.body.total,400000);assert.equal(result.body.advance_due,120000);return result;}
- const first=await book(),second=await book();
+ let first=await book(),second=await book();
+ assert.equal(first.body.can_pay,true);
  // A malicious screenshot is rejected before any payment is recorded.
  const bad=new FormData();bad.set('reference','TEST'+Date.now());bad.set('screenshot',new Blob(['not an image'],{type:'image/png'}),'bad.png');
  assert.equal((await api('/api/payments',{cookie:first.cookie,form:bad})).r.status,400);
@@ -46,8 +47,15 @@ try{
  const duplicate=new FormData();duplicate.set('reference','DUPLICATETEST001');assert.equal((await api('/api/payments',{cookie:first.cookie,form:duplicate})).r.status,400);
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'availability',roomType:'non_ac',startDate:input.arrival,endDate:'2098-03-11',availableRooms:0}})).r.status,200);
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'approve',id:first.body.id}})).r.status,400);
+ assert.equal((await api('/api/bookings',{data:input})).r.status,400);
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'availability',roomType:'non_ac',startDate:input.arrival,endDate:'2098-03-11',availableRooms:1}})).r.status,200);
- assert.equal((await api('/api/admin',{cookie:admin,data:{action:'approve',id:first.body.id}})).r.status,200);
+ const race=await Promise.all([first,second].map(b=>api('/api/admin',{cookie:admin,data:{action:'approve',id:b.body.id}})));
+ assert.deepEqual(race.map(x=>x.r.status).sort(),[200,400]);
+ if(race[1].r.status===200)[first,second]=[second,first];
+ const view=await api('/api/admin/availability?date='+input.arrival,{cookie:admin});
+ assert.equal(view.r.status,200);assert.equal(view.body.find(x=>x.room==='non_ac').vacant,0);
+ const edits=await Promise.all([api('/api/admin',{cookie:admin,data:{action:'availability',roomType:'non_ac',startDate:input.arrival,endDate:'2098-03-11',availableRooms:0}}),api('/api/admin',{cookie:admin,data:{action:'approve',id:second.body.id}})]);
+ assert.equal(edits[0].r.status,200);assert.equal(edits[1].r.status,400);
  status=await api('/api/bookings',{cookie:first.cookie});assert.equal(status.body.status,'confirmed');
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'approve',id:second.body.id}})).r.status,400);
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'reject',id:second.body.id}})).r.status,200);
