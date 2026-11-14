@@ -13,7 +13,7 @@ export default function MobileMenu() {
     return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
   }, [open]);
   return <div className="mobile-navigation" ref={ref}>
-    <button className="mobile-toggle" aria-expanded={open} aria-controls="mobile-links" onClick={() => setOpen(!open)}>{open ? "Close ×" : "Menu ☰"}</button>
+    <button className="mobile-toggle" aria-expanded={open} aria-controls="mobile-links" onClick={() => setOpen(current => !current)}>{open ? "Close ×" : "Menu ☰"}</button>
     {open && <nav id="mobile-links" aria-label="Mobile navigation" onClick={() => setOpen(false)}>
       <a href="#rooms">Rooms</a><a href="#services">Services</a><a href="#gallery">Gallery</a><a href="#contact">Contact</a><a href="/booking">Book a Room</a>
     </nav>}

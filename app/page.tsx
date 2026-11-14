@@ -1,3 +1,5 @@
+import MobileMenu from "./components/MobileMenu";
+
 const amenities = ["Air conditioning", "Wi-Fi", "Television", "Hot & cold water", "Room service", "Housekeeping", "24-hour reception", "Power backup"];
 
 const services = [
@@ -26,7 +28,7 @@ export default function Home() {
             <a href="#contact">Contact</a>
           </nav>
           <a className="button button-light header-book" href="/booking">Book a Room</a>
-          <details className="mobile-navigation"><summary>Menu</summary><nav aria-label="Mobile navigation"><a href="#rooms">Rooms</a><a href="#services">Services</a><a href="#gallery">Gallery</a><a href="/booking">Book a Room</a></nav></details>
+          <MobileMenu />
         </header>
         <div className="hero-content" id="top">
           <p className="eyebrow">Kashi Riverside Stay · Sonarpura, Varanasi</p>
