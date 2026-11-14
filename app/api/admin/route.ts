@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { admin, failure, sameOrigin, supabase } from "../../../lib/server";
 
 export async function GET() {
-  try { await admin(); return Response.json(await supabase("/rest/v1/bookings?select=id,guest_name,phone,check_in,check_out,room_type,total,advance_due,status,payments(screenshot_path,transaction_reference,claimed_amount,status)&order=created_at.desc&limit=100")); }
+  try { await admin(); const [bookings,roomTypes,availability]=await Promise.all([supabase("/rest/v1/bookings?select=id,guest_name,phone,check_in,check_out,room_type,total,advance_due,status,payments(screenshot_path,transaction_reference,claimed_amount,status)&order=created_at.desc&limit=100"),supabase("/rest/v1/room_types?select=code,inventory&order=code"),supabase("/rest/v1/room_availability?select=room_type,stay_date,available_rooms&order=stay_date&limit=500")]); return Response.json({bookings,roomTypes,availability}); }
   catch(error) { return failure(error,401); }
 }
 export async function POST(request: Request) {
@@ -16,6 +16,12 @@ export async function POST(request: Request) {
       (await cookies()).set("hotel_admin",session.access_token,{httpOnly:true,secure:process.env.NODE_ENV === "production",sameSite:"strict",path:"/",maxAge:session.expires_in});
     } else if(data.action === "logout") {
       (await cookies()).delete("hotel_admin");
+    } else if(data.action === "availability") {
+      const user=await admin(); const count=Number(data.availableRooms);
+      if(!["ac","non_ac"].includes(data.roomType)||!/^\d{4}-\d{2}-\d{2}$/.test(data.startDate)||!/^\d{4}-\d{2}-\d{2}$/.test(data.endDate)||!Number.isInteger(count)||count<0||count>(data.roomType==="ac"?7:1)) throw new Error("Invalid availability");
+      const start=new Date(`${data.startDate}T00:00:00Z`),end=new Date(`${data.endDate}T00:00:00Z`); if(end<start||(end.getTime()-start.getTime())/86400000>365) throw new Error("Invalid availability range");
+      const rows=[]; for(let d=start;d<=end;d=new Date(d.getTime()+86400000)) rows.push({room_type:data.roomType,stay_date:d.toISOString().slice(0,10),available_rooms:count,updated_by:user,updated_at:new Date().toISOString()});
+      await supabase("/rest/v1/room_availability?on_conflict=room_type,stay_date",{method:"POST",headers:{Prefer:"resolution=merge-duplicates"},body:JSON.stringify(rows)});
     } else {
       const user = await admin();
       if(!["approve","reject"].includes(data.action)) throw new Error("Invalid action");

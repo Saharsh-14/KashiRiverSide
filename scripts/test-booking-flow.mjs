@@ -44,17 +44,21 @@ try{
  let status=await api('/api/bookings',{cookie:first.cookie});assert.equal(status.body.status,'payment_submitted_pending_verification');
  // Duplicate submission must not create another payment.
  const duplicate=new FormData();duplicate.set('reference','DUPLICATETEST001');assert.equal((await api('/api/payments',{cookie:first.cookie,form:duplicate})).r.status,400);
+ assert.equal((await api('/api/admin',{cookie:admin,data:{action:'availability',roomType:'non_ac',startDate:input.arrival,endDate:'2098-03-11',availableRooms:0}})).r.status,200);
+ assert.equal((await api('/api/admin',{cookie:admin,data:{action:'approve',id:first.body.id}})).r.status,400);
+ assert.equal((await api('/api/admin',{cookie:admin,data:{action:'availability',roomType:'non_ac',startDate:input.arrival,endDate:'2098-03-11',availableRooms:1}})).r.status,200);
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'approve',id:first.body.id}})).r.status,200);
  status=await api('/api/bookings',{cookie:first.cookie});assert.equal(status.body.status,'confirmed');
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'approve',id:second.body.id}})).r.status,400);
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'reject',id:second.body.id}})).r.status,200);
  assert.equal((await api('/api/bookings',{cookie:second.cookie})).body.status,'rejected');
  assert.equal((await api('/api/bookings',{data:input})).r.status,400);
- console.log('PASS: booking pricing, invalid dates, private guest status, admin login, file validation, private screenshot access, payment submission, duplicate payment rejection, approval, last-room conflict and rejection.');
+ console.log('PASS: booking pricing, invalid dates, private guest status, admin login, file validation, private screenshot access, payment submission, duplicate payment rejection, date-specific admin availability, approval, last-room conflict and rejection.');
 }finally{
  server.kill();
  if(evidence)await db('/storage/v1/object/payment-evidence',{method:'DELETE',body:JSON.stringify({prefixes:[evidence]})});
  for(const id of ids){for(const table of ['booking_events','payments'])await db(`/rest/v1/${table}?booking_id=eq.${id}`,{method:'DELETE'});await db(`/rest/v1/bookings?id=eq.${id}`,{method:'DELETE'});}
+ await db('/rest/v1/room_availability?room_type=eq.non_ac&stay_date=gte.2098-03-10&stay_date=lte.2098-03-11',{method:'DELETE'});
  if(testUser?.id){await db(`/rest/v1/hotel_admins?user_id=eq.${testUser.id}`,{method:'DELETE'});await db(`/auth/v1/admin/users/${testUser.id}`,{method:'DELETE'});}
  console.log('Removed only temporary test records, screenshot and test admin account.');
 }

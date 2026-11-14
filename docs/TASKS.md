@@ -17,6 +17,8 @@
   submission, approval/rejection, and last-room conflict handling are verified.
 - Supabase security, performance, and health advisors checked. RLS is enabled on
   the server-only tables; leaked-password protection remains to be enabled in Auth.
+- Date-specific AC/non-AC availability controls are implemented and verified in
+  the admin dashboard. Payment verification remains pending without a timer.
 - Live bookings remain disabled until production configuration and final owner
   approval are complete.
 
