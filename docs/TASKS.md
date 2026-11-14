@@ -9,8 +9,18 @@
 
 ## Current Project Status
 
+- Private screenshot upload and admin viewing implemented; production build and
+  HTTP booking/payment/admin integration suite pass (2026-11-14).
+- Admin password setup completed. Test data was cleaned up after verification.
+- Browser/mobile verification and production hardening remain outstanding.
+
+- Booking API, private status page, payment-reference submission and admin review
+  screens implemented. Supabase schema and atomic operations applied.
+- Admin allowlist prepared for kashiriverside@gmail.com; password setup pending.
+- Live bookings remain disabled pending full integration testing and hardening.
+
 - Planning: completed
-- Public website implementation: not started
+- Public website implementation: foundation started
 - Admin dashboard: deferred until the public website is ready
 - Contact details and final media assets: pending from owner
 
@@ -52,43 +62,43 @@
 
 ## Phase 3: Project Setup
 
-- [ ] Select and initialize the Next.js project
-- [ ] Configure React and TypeScript
+- [x] Select and initialize the Next.js project
+- [x] Configure React and TypeScript
 - [ ] Configure Tailwind CSS
-- [ ] Establish project folder structure
+- [x] Establish project folder structure
 - [ ] Configure environment variables
 - [ ] Set up formatting and linting
-- [ ] Add the approved color tokens
-- [ ] Add typography configuration
-- [ ] Add shared layout and navigation structure
-- [ ] Add logo and image asset handling
-- [ ] Add responsive breakpoints
+- [x] Add the approved color tokens
+- [x] Add typography configuration
+- [x] Add shared layout and navigation structure
+- [x] Add logo and image asset handling
+- [x] Add responsive breakpoints
 
 ## Phase 4: Public Website Foundation
 
-- [ ] Build the site header
-- [ ] Build desktop navigation
-- [ ] Build mobile hamburger navigation
-- [ ] Build the floating Book a Room action
+- [x] Build the site header
+- [x] Build desktop navigation
+- [x] Build mobile hamburger navigation
+- [x] Build the floating Book a Room action
 - [ ] Build the floating WhatsApp action
-- [ ] Build the deep-brown footer
-- [ ] Add compact map section to the footer
-- [ ] Add the single Policies link
-- [ ] Build reusable buttons
-- [ ] Build reusable cards
-- [ ] Build responsive image components
-- [ ] Add accessibility states and labels
+- [x] Build the deep-brown footer
+- [x] Add compact map section to the footer
+- [x] Add the single Policies link
+- [x] Build reusable buttons
+- [x] Build reusable cards
+- [x] Build responsive image components
+- [x] Add accessibility states and labels
 
 ## Phase 5: Home Page
 
-- [ ] Build the background video hero
-- [ ] Add the subtle warm-brown video overlay
-- [ ] Add the centered “Culture in Every Stay” tagline
-- [ ] Add the hero Book a Room button
-- [ ] Build the slow revolving amenities strip
-- [ ] Build the two-card room preview
-- [ ] Build the elegant horizontal Services cards
-- [ ] Build the Why Stay With Us section
+- [x] Build the background video hero
+- [x] Add the subtle warm-brown video overlay
+- [x] Add the centered “Culture in Every Stay” tagline
+- [x] Add the hero Book a Room button
+- [x] Build the slow revolving amenities strip
+- [x] Build the two-card room preview
+- [x] Build the elegant horizontal Services cards
+- [x] Build the Why Stay With Us section
 - [ ] Build the Gallery preview carousel
 - [ ] Add mobile fallback behavior for the hero video
 - [ ] Add reduced-motion behavior

@@ -1,0 +1,63 @@
+# Booking setup
+
+## Payment screenshot verification — 2026-11-14
+
+- Optional PNG/JPEG evidence (maximum 3 MB) is accepted with the payment reference.
+- Evidence is stored in the private payment-evidence bucket; authenticated admins
+  receive a signed viewing link valid for 60 seconds.
+- Guest access is authorized through the booking cookie before uploads.
+- Admin password setup and live sign-in were verified in the previous step.
+- Production build passed. HTTP integration tests passed for pricing, invalid
+  dates, private guest status, admin login, invalid file rejection, private
+  screenshot access, duplicate payment submission, approval, capacity conflict
+  and rejection. Test records, evidence and temporary admin were removed.
+- A same-origin validation issue found by testing was fixed by comparing the
+  Origin host with the incoming HTTP Host rather than Next's internal URL.
+- Tests used BOOKINGS_ENABLED=true only in the test server process. The saved
+  environment flag remains false. Browser/mobile QA, booking idempotency,
+  request throttling, guest recovery and notification delivery remain pending.
+- Failed/uncertain payment commits preserve uploaded evidence to avoid deleting
+  a file that may already be referenced; periodic orphan cleanup remains pending.
+
+## Latest implementation
+
+- Booking form posts to a server route; server validates inputs, reads current
+  room prices, checks availability and calculates prices in integer paise.
+- A private HttpOnly cookie grants status access for the latest booking in that
+  browser. The database stores only its SHA-256 hash.
+- Payment reference submission updates the booking and payment atomically.
+- `/admin` authenticates against Supabase Auth and checks hotel_admins on every
+  protected operation. Approval verifies payment and checks capacity under a lock.
+- Admin account kashiriverside@gmail.com is allowlisted, but needs private password setup.
+- Payment and approval SQL smoke tests passed inside rolled-back transactions.
+- BOOKING_ENABLED / BOOKINGS_ENABLED: the actual flag is BOOKINGS_ENABLED and
+  remains false until end-to-end testing and admin password setup are complete.
+- Remaining: screenshot upload, durable request throttling, idempotent booking
+  creation, cross-device guest recovery, automated notifications and browser QA.
+- A successful QR reference submission is not proof of funds received.
+
+The earlier setup notes below describe the state before these server routes were added.
+
+The initial database schema is prepared in
+`supabase/migrations/001_booking_foundation.sql` and was applied to the hotel project as `booking_foundation`.
+It includes rooms, bookings, payments and audit events with row-level security.
+It also includes an initially empty hotel_admins allowlist. All five tables
+deny direct anonymous/authenticated access; server-side authorization is required.
+Room rates/inventory are seeded. No guests, payments or admin accounts were created.
+Database constraints enforce the daily mattress total and 30% advance.
+The live Node.js REST connection was verified; the earlier PowerShell 401 was
+caused by request detection rather than an incorrect secret key.
+Full admin implementation is now authorized by the owner. The earlier deferral
+in RULES.md and other planning documents is superseded by this decision.
+
+Guest contact fields, special requests, policy agreement and a review step have
+been added. No booking data is submitted or stored yet.
+
+Missing: Supabase project connection. Configure SUPABASE_URL and
+SUPABASE_SERVICE_ROLE_KEY locally, never in chat or Git. Keep BOOKING_ENABLED
+false until server validation, availability checks, private payment uploads,
+admin verification and end-to-end tests are complete.
+
+The QR asset is saved, but payment collection must wait until requests can be
+persisted reliably. The owner must still specify child age limits and refunds
+for hotel-rejected requests.
