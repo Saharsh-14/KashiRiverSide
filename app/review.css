@@ -1,0 +1,90 @@
+/* Responsive refinements shared by guest and admin screens. */
+html { scroll-padding-top: 32px; }
+body { overflow-wrap: break-word; }
+button, input, select, textarea { font: inherit; }
+button, summary { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .55; transform: none; }
+img { max-width: 100%; }
+a:focus-visible, button:focus-visible, textarea:focus-visible { outline: 3px solid var(--blue); outline-offset: 5px; }
+.skip-link { position: fixed; top: -100px; left: 20px; padding: 15px; background: var(--cream); z-index: 100; }
+.skip-link:focus { top: 12px; }
+.site-header { z-index: 20; }
+.hero { background: radial-gradient(ellipse at 50% 35%, #74342b 0%, #391212 72%); }
+.hero::after { content: ""; pointer-events: none; position: absolute; inset: 16% 24% 8%; border: 1px solid #eddbc21c; border-radius: 50% 50% 0 0; }
+.hero h1 { line-height: .95; }
+.brand { background: var(--cream); border-radius: 6px; padding: 5px 12px; }
+.brand img { width: 115px; height: 62px; }
+.mobile-toggle { background: transparent; color: var(--cream); border: 1px solid #eddbc25c; border-radius: 6px; min-height: 44px; padding: 8px 14px; }
+.mobile-navigation nav { box-shadow: 0 12px 30px #0004; }
+.mobile-navigation nav a { padding: 10px 0; }
+.room-art::before, .room-art::after { display: none; }
+.room-art { height: 390px; }
+.room-art img { object-position: center 64%; }
+.room-info { flex-wrap: wrap; align-items: flex-end; }
+.room-info strong { font: 600 20px Manrope, sans-serif; }
+.room-info small { font-size: 12px; }
+.room-card { min-height: 0; }
+.room-note { max-width: none; }
+.room-facilities { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 0; list-style: none; font-size: 12px; }
+.room-card .card-link { margin-top: 24px; }
+.services { padding-top: 80px; padding-bottom: 80px; }
+.service-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; border: 0; }
+.service-card { background: #f9f4ec55; border: 1px solid #74342b33; border-radius: 8px; padding: 24px; grid-template-columns: 26px 1fr 20px; box-shadow: 0 4px 16px #39121208; }
+.service-card:hover { padding: 24px; transform: translateY(-2px); }
+.service-card h3 { line-height: 1.1; }
+.service-card small { display: block; font-size: 11px; letter-spacing: .05em; margin-top: 12px; color: var(--brown); }
+.gallery-placeholder-track { display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 12px 0 20px; }
+.gallery-placeholder { flex: 0 0 32%; min-width: 240px; aspect-ratio: 4/3; border: 1px solid #74342b40; border-radius: 12px; display: grid; place-content: center; text-align: center; background: #f9f4ec55; scroll-snap-align: start; }
+.gallery-placeholder span { font: 500 30px 'Cormorant Garamond', serif; }
+.gallery-placeholder small { margin-top: 10px; font-size: 12px; }
+.floating-actions { position: fixed; right: 24px; bottom: 24px; display: flex; gap: 10px; z-index: 40; }
+.floating-actions .button { box-shadow: 0 4px 20px #0002; min-height: 48px; }
+.floating-actions .floating-book { position: static; }
+.footer-brand img { background: var(--cream); padding: 10px; border-radius: 8px; width: 180px; height: 110px; }
+.footer-map { display: flex; flex-direction: column; padding: 20px; border: 1px solid #eddbc240; background: #eddbc20c; }
+.footer-column { min-width: 0; }
+.footer-column a { min-height: 28px; }
+.booking-page { max-width: 1120px; padding-bottom: 110px; }
+.booking-page h1, .policy-page h1 { font: 500 clamp(42px, 6vw, 76px)/1.05 'Cormorant Garamond',serif; margin: 25px 0; }
+.booking-page h2, .policy-page h2 { font: 600 32px/1.15 'Cormorant Garamond',serif; }
+.booking-page .section-kicker { margin-top: 45px; }
+.booking-page p { line-height: 1.7; }
+.booking-page label { font-size: 14px; min-width: 0; }
+.booking-page input, .booking-page select, .booking-page textarea { width: 100%; min-height: 48px; border: 1px solid #74342b66; padding: 12px 14px; border-radius: 6px; background: var(--white); color: var(--deep); }
+.booking-page textarea { resize: vertical; }
+.booking-page .checkbox-label { align-items: flex-start; gap: 12px; line-height: 1.6; }
+.booking-page input[type=checkbox] { width: 20px; min-height: 20px; height: 20px; flex-shrink: 0; accent-color: var(--brown); margin-top: 2px; }
+.booking-page .checkbox-label a { text-decoration: underline; }
+.booking-page .wide-field { grid-column: 1/-1; }
+.booking-page aside { background: #f9f4ec80; }
+.booking-page form button { align-self: end; justify-content: center; }
+.booking-page > button, .admin-booking button { min-height: 44px; padding: 10px 18px; border: 1px solid var(--brown); border-radius: 6px; margin: 8px 10px 8px 0; background: var(--white); color: var(--deep); }
+.admin-booking { padding: 24px; border: 1px solid #74342b44; border-radius: 10px; background: #f9f4ec66; margin: 24px 0; }
+.admin-booking p { overflow-wrap: anywhere; }
+.admin-booking a { text-decoration: underline; }
+.policy-page { max-width: 1000px; margin: auto; }
+.policy-page section { margin: 36px 0; line-height: 1.8; }
+.policy-page li { margin-bottom: 12px; }
+.form-notice { padding: 18px 22px; background: #8fa4d133; border-left: 3px solid var(--brown); border-radius: 4px; }
+[role=alert] { padding: 16px; border: 1px solid var(--brown); border-radius: 6px; background: #fff7; }
+@media (max-width:800px) {
+ .hero { min-height: 580px; height: 85svh; }
+ .hero h1 { font-size: clamp(58px, 14vw, 86px); }
+ .hero::after { inset: 20% 8% 8%; }
+ .service-list { grid-template-columns: 1fr; }
+ .room-art { height: 340px; }
+ .section-heading h2 { font-size: 42px; }
+ .room-info h3 { font-size: 38px; }
+ .floating-actions { left: 14px; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); justify-content: flex-end; }
+ .floating-actions .button { padding: 13px 16px; font-size: 10px; }
+ .booking-page form { grid-template-columns: minmax(0,1fr); gap: 22px; }
+ .booking-page input, .booking-page select, .booking-page textarea { font-size: 16px; }
+ .site-footer { grid-template-columns: minmax(0,1fr); }
+ .footer-map { grid-column: auto; width: 100%; max-width: 260px; }
+ .gallery-placeholder { flex-basis: 82%; }
+ .section-shell { padding-top: 70px; padding-bottom: 70px; }
+}
+@media (prefers-reduced-motion: reduce) {
+ .marquee-track { width: auto; flex-wrap: wrap; white-space: normal; }
+ .marquee-track span[aria-hidden=true] { display: none; }
+}
