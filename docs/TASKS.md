@@ -9,15 +9,16 @@
 
 ## Current Project Status
 
-- Private screenshot upload and admin viewing implemented; production build and
-  HTTP booking/payment/admin integration suite pass (2026-11-14).
-- Admin password setup completed. Test data was cleaned up after verification.
-- Browser/mobile verification and production hardening remain outstanding.
-
-- Booking API, private status page, payment-reference submission and admin review
-  screens implemented. Supabase schema and atomic operations applied.
-- Admin allowlist prepared for kashiriverside@gmail.com; password setup pending.
-- Live bookings remain disabled pending full integration testing and hardening.
+- Responsive desktop/mobile browser verification completed for the home, booking,
+  booking status, policies, and admin routes (2026-11-15).
+- Production build and the complete HTTP booking/payment/admin integration suite
+  pass. Temporary test bookings, evidence, and admin account were cleaned up.
+- Private screenshot upload and admin viewing, booking status, payment-reference
+  submission, approval/rejection, and last-room conflict handling are verified.
+- Supabase security, performance, and health advisors checked. RLS is enabled on
+  the server-only tables; leaked-password protection remains to be enabled in Auth.
+- Live bookings remain disabled until production configuration and final owner
+  approval are complete.
 
 - Planning: completed
 - Public website implementation: foundation started
