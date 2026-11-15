@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Booking() {
   const requestKey = useRef(crypto.randomUUID());
@@ -10,6 +10,14 @@ export default function Booking() {
   const [departure, setDeparture] = useState("");
   const [rate, setRate] = useState(2000);
   const [extra, setExtra] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const validDate = (value: string | null) => value && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+    const start = params.get("arrival"), end = params.get("departure");
+    if (validDate(start)) setArrival(start!);
+    if (validDate(end)) setDeparture(end!);
+    if (params.get("room") === "non_ac") setRate(1500);
+  }, []);
   const nights = arrival && departure ? Math.max(0, Math.round((Date.parse(departure) - Date.parse(arrival)) / 86400000)) : 0;
   const total = nights * (rate + (extra ? 500 : 0));
 
