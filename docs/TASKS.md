@@ -14,6 +14,12 @@
   can inspect daily total, online limit, confirmed and vacant counts. Production
   build and concurrent last-room confirmation/admin-edit integration checks pass.
   Payment reference submission stays available for guests who already paid.
+- Booking creation is idempotent: browser retries reuse the original booking and
+  access cookie. A Postgres-backed limiter allows five new booking attempts per
+  client in ten minutes and works across multiple application instances.
+- Cross-device recovery uses the booking reference plus a private recovery code.
+  Only a keyed hash is stored; recovery attempts are rate limited and successful
+  recovery invalidates the previously connected browser.
 
 - Responsive desktop/mobile browser verification completed for the home, booking,
   booking status, policies, and admin routes (2026-11-15).
@@ -22,7 +28,8 @@
 - Private screenshot upload and admin viewing, booking status, payment-reference
   submission, approval/rejection, and last-room conflict handling are verified.
 - Supabase security, performance, and health advisors checked. RLS is enabled on
-  the server-only tables; leaked-password protection remains to be enabled in Auth.
+  the server-only tables; leaked-password protection is deferred because it
+  requires the Supabase Pro plan.
 - Date-specific AC/non-AC availability controls are implemented and verified in
   the admin dashboard. Payment verification remains pending without a timer.
 - Live bookings remain disabled until production configuration and final owner
@@ -31,7 +38,8 @@
 - Planning: completed
 - Public website implementation: foundation started
 - Admin dashboard: deferred until the public website is ready
-- Contact details and final media assets: pending from owner
+- Phone, WhatsApp, directions, logo, QR and supplied gallery photos: complete
+- Exact street address, optional email and final hero media: pending from owner
 
 ## Phase 1: Planning and Documentation
 
@@ -56,8 +64,8 @@
 
 ## Phase 2: Owner Inputs and Assets
 
-- [ ] Provide final phone number
-- [ ] Provide final WhatsApp number
+- [x] Provide final phone number
+- [x] Provide final WhatsApp number
 - [ ] Provide email address, if required
 - [ ] Provide exact hotel map pin/link
 - [ ] Provide nearby landmark
@@ -134,15 +142,15 @@
 
 ## Phase 7: Gallery and Footer Contact
 
-- [ ] Build the horizontal gallery carousel
+- [x] Build the horizontal gallery carousel
 - [ ] Add AC room photographs
 - [ ] Add non-AC room photographs
 - [ ] Add bathroom photographs
 - [ ] Add exterior and common-area photographs
 - [ ] Add optional nearby-surroundings photographs
 - [ ] Add hotel address to the footer
-- [ ] Add phone number to the footer
-- [ ] Add WhatsApp number to the footer
+- [x] Add phone number to the footer
+- [x] Add WhatsApp number to the footer
 - [ ] Add email address, if selected
 - [ ] Add Get Directions link
 - [ ] Add final map embed/link

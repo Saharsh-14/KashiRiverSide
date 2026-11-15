@@ -1,7 +1,12 @@
 import { cookies } from "next/headers";
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 
 export const hash = (value: string) => createHash("sha256").update(value).digest("hex");
+export const keyedHash = (purpose: string, value: string) => {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) throw new Error("Database connection unavailable");
+  return createHmac("sha256", key).update(`${purpose}:${value}`).digest("hex");
+};
 export async function supabase(path: string, init: RequestInit = {}) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

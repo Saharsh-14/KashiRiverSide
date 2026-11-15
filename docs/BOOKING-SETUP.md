@@ -14,8 +14,9 @@
 - A same-origin validation issue found by testing was fixed by comparing the
   Origin host with the incoming HTTP Host rather than Next's internal URL.
 - Tests used BOOKINGS_ENABLED=true only in the test server process. The saved
-  environment flag remains false. Browser/mobile QA, booking idempotency,
-  request throttling, guest recovery and notification delivery remain pending.
+  environment flag remains false. Browser/mobile QA is complete. Booking
+  idempotency, durable request throttling and cross-device guest recovery are
+  verified; notification delivery remains pending.
 - Failed/uncertain payment commits preserve uploaded evidence to avoid deleting
   a file that may already be referenced; periodic orphan cleanup remains pending.
 
@@ -32,8 +33,7 @@
 - Payment and approval SQL smoke tests passed inside rolled-back transactions.
 - BOOKING_ENABLED / BOOKINGS_ENABLED: the actual flag is BOOKINGS_ENABLED and
   remains false until end-to-end testing and admin password setup are complete.
-- Remaining: screenshot upload, durable request throttling, idempotent booking
-  creation, cross-device guest recovery, automated notifications and browser QA.
+- Remaining: automated guest notifications.
 - A successful QR reference submission is not proof of funds received.
 
 The earlier setup notes below describe the state before these server routes were added.

@@ -33,10 +33,14 @@ a:focus-visible, button:focus-visible, textarea:focus-visible { outline: 3px sol
 .service-card:hover { padding: 24px; transform: translateY(-2px); }
 .service-card h3 { line-height: 1.1; }
 .service-card small { display: block; font-size: 11px; letter-spacing: .05em; margin-top: 12px; color: var(--brown); }
-.gallery-placeholder-track { display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 12px 0 20px; }
-.gallery-placeholder { flex: 0 0 32%; min-width: 240px; aspect-ratio: 4/3; border: 1px solid #74342b40; border-radius: 12px; display: grid; place-content: center; text-align: center; background: #f9f4ec55; scroll-snap-align: start; }
-.gallery-placeholder span { font: 500 30px 'Cormorant Garamond', serif; }
-.gallery-placeholder small { margin-top: 10px; font-size: 12px; }
+.gallery { overflow: hidden; }
+.gallery-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; margin-bottom: 40px; }
+.gallery-heading h2 { font: 500 clamp(48px, 6vw, 82px)/.95 'Cormorant Garamond', serif; margin: 0; }
+.gallery-heading p { max-width: 360px; line-height: 1.7; margin: 0; }
+.gallery-track { display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin; scrollbar-color: var(--brown) transparent; padding: 6px 0 24px; }
+.gallery-card { flex: 0 0 min(38vw, 480px); min-width: 280px; margin: 0; scroll-snap-align: start; }
+.gallery-card img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 10px; box-shadow: 0 14px 34px #39121220; }
+.gallery-card figcaption { margin-top: 12px; color: var(--brown); font-size: 10px; letter-spacing: .14em; }
 .floating-actions { position: fixed; right: 24px; bottom: 24px; display: flex; gap: 10px; z-index: 40; }
 .floating-actions .button { box-shadow: 0 4px 20px #0002; min-height: 48px; }
 .floating-actions .floating-book { position: static; }
@@ -81,7 +85,9 @@ a:focus-visible, button:focus-visible, textarea:focus-visible { outline: 3px sol
  .booking-page input, .booking-page select, .booking-page textarea { font-size: 16px; }
  .site-footer { grid-template-columns: minmax(0,1fr); }
  .footer-map { grid-column: auto; width: 100%; max-width: 260px; }
- .gallery-placeholder { flex-basis: 82%; }
+ .gallery-heading { display: block; }
+ .gallery-heading p { margin-top: 16px; }
+ .gallery-card { flex-basis: 84vw; }
  .section-shell { padding-top: 70px; padding-bottom: 70px; }
 }
 @media (prefers-reduced-motion: reduce) {

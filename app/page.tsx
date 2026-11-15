@@ -11,6 +11,32 @@ const services = [
   { number: "06", title: "Parking & extra bedding", copy: "Helpful comforts available whenever you need them." },
 ];
 
+const gallery = [
+  { src: "/assets/room-1.jpg", alt: "Guest room at Kashi Riverside Stay" },
+  { src: "/assets/room-2.jpg", alt: "Reception at Kashi Riverside Stay" },
+  { src: "/assets/room-3.jpg", alt: "AC guest room with purple bedding" },
+  { src: "/assets/room-4.jpg", alt: "Guest room interior at Kashi Riverside Stay" },
+  { src: "/assets/room-5.jpg", alt: "Guest room and furnishings at Kashi Riverside Stay" },
+  { src: "/assets/room-6.jpg", alt: "Guest accommodation at Kashi Riverside Stay" },
+  { src: "/assets/room-7.jpg", alt: "Hotel room interior in Sonarpura" },
+  { src: "/assets/room-8.jpg", alt: "Comfortable guest room in Varanasi" },
+  { src: "/assets/room-9.jpg", alt: "Guest bathroom at Kashi Riverside Stay" },
+  { src: "/assets/room-10.jpg", alt: "Hotel interior at Kashi Riverside Stay" },
+  { src: "/assets/gallery-11.jpg", alt: "Reception desk at Kashi Riverside Stay" },
+  { src: "/assets/gallery-12.jpg", alt: "Guest-floor corridor and staircase" },
+  { src: "/assets/gallery-13.jpg", alt: "Hotel corridor with Varanasi wall artwork" },
+  { src: "/assets/gallery-14.jpg", alt: "Second-floor guest corridor" },
+  { src: "/assets/gallery-15.jpg", alt: "Guest room entrance beside the staircase" },
+  { src: "/assets/gallery-16.jpg", alt: "Third-floor guest corridor and staircase" },
+  { src: "/assets/gallery-17.jpg", alt: "Guest corridor with Assi Ghat artwork" },
+  { src: "/assets/gallery-18.jpg", alt: "Granite hotel staircase with safety railing" },
+  { src: "/assets/gallery-19.jpg", alt: "Guest corridor with Ganga Aarti artwork" },
+  { src: "/assets/gallery-20.jpg", alt: "Hotel corridor with Sanchi Stupa artwork" },
+  { src: "/assets/gallery-21.jpg", alt: "Illuminated reception desk" },
+  { src: "/assets/gallery-22.jpg", alt: "Interior staircase and hotel entrance" },
+  { src: "/assets/gallery-23.jpg", alt: "Reception and adjoining hotel corridor" },
+];
+
 export default function Home() {
   return (
     <main>
@@ -65,7 +91,16 @@ export default function Home() {
         <div className="service-list">{services.map((service) => <article className="service-card" key={service.number}><span>{service.number}</span><div><h3>{service.title}</h3><p>{service.copy}</p></div><b>↗</b></article>)}</div>
       </section>
 
-      <section className="section-shell" id="gallery"><div className="section-kicker">A closer look</div><h2>Our gallery</h2><p>Hotel and room photographs will be added soon.</p></section>
+      <section className="section-shell gallery" id="gallery">
+        <div className="section-kicker">A closer look</div>
+        <div className="gallery-heading"><h2>Our gallery</h2><p>Rooms, reception, and the details that make a stay feel easy.</p></div>
+        <div className="gallery-track" aria-label="Hotel photo gallery">
+          {gallery.map((photo, index) => <figure className="gallery-card" key={photo.src}>
+            <img src={photo.src} alt={photo.alt} loading={index < 3 ? "eager" : "lazy"} />
+            <figcaption>{String(index + 1).padStart(2, "0")} / {gallery.length}</figcaption>
+          </figure>)}
+        </div>
+      </section>
       <section className="section-shell" id="policies"><h2>Policies</h2><p>Check-in: 1 PM. Check-out: 11 AM. A 30% advance and hotel verification are required for confirmation. The remaining balance is payable at the hotel.</p><p>Cancellation at least 7 days before check-in: full advance refund. Cancellation 3–6 days before check-in: 50% advance refund. Less than 3 days or a no-show: advance is non-refundable. Hotel cancellation of a confirmed booking: full advance refund.</p><p>One date change may be requested, subject to availability. Refund processing may take 5–7 working days. Rates may change seasonally; existing booking prices are preserved. Extra bedding and arranged services are subject to availability and additional charges.</p></section>
       <a className="button button-dark floating-book" id="booking" href="/booking">Book a Room ↗</a>
 

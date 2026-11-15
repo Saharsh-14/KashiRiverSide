@@ -12,8 +12,8 @@ async function db(path,options={}){
  if(!r.ok)throw new Error(`Test database request failed: ${r.status}`);
  const t=await r.text();return t?JSON.parse(t):null;
 }
-async function api(path,{cookie='',data,form,method}={}){
- const r=await fetch(base+path,{method:method||(data||form?'POST':'GET'),headers:{Origin:base,...(cookie?{Cookie:cookie}:{}),...(data?{'Content-Type':'application/json'}:{})},body:form|| (data?JSON.stringify(data):undefined),redirect:'manual'});
+async function api(path,{cookie='',data,form,method,idempotencyKey,clientIp='203.0.113.10'}={}){
+ const r=await fetch(base+path,{method:method||(data||form?'POST':'GET'),headers:{Origin:base,'X-Forwarded-For':clientIp,...(cookie?{Cookie:cookie}:{}),...(data?{'Content-Type':'application/json','Idempotency-Key':idempotencyKey||randomUUID()}:{})},body:form|| (data?JSON.stringify(data):undefined),redirect:'manual'});
  const text=await r.text();let body;try{body=JSON.parse(text);}catch{body=text;}
  return {r,body,cookie:r.headers.get('set-cookie')?.split(';')[0]};
 }
@@ -29,8 +29,30 @@ try{
  const login=await api('/api/admin',{data:{action:'login',email,password}});assert.equal(login.r.status,200,JSON.stringify(login.body));const admin=login.cookie;
  const input={arrival:'2098-03-10',departure:'2098-03-12',room:'non_ac',adults:2,children:0,extra:true,name:'AUTOMATED TEST ONLY',phone:'0000000000',email:'',requests:'Temporary integration test',accepted:true};
  assert.equal((await api('/api/bookings',{data:{...input,departure:input.arrival}})).r.status,400);
- async function book(){const result=await api('/api/bookings',{data:input});assert.equal(result.r.status,201,JSON.stringify(result.body));ids.push(result.body.id);assert.equal(result.body.total,400000);assert.equal(result.body.advance_due,120000);return result;}
+ async function book(){const result=await api('/api/bookings',{data:input,clientIp:'203.0.113.11'});assert.equal(result.r.status,201,JSON.stringify(result.body));ids.push(result.body.id);assert.equal(result.body.total,400000);assert.equal(result.body.advance_due,120000);return result;}
  let first=await book(),second=await book();
+ const retryKey=randomUUID();
+ const retryFirst=await api('/api/bookings',{data:input,idempotencyKey:retryKey,clientIp:'203.0.113.12'});
+ const retrySecond=await api('/api/bookings',{data:input,idempotencyKey:retryKey,clientIp:'203.0.113.12'});
+ assert.equal(retryFirst.r.status,201,JSON.stringify(retryFirst.body));
+ assert.equal(retrySecond.r.status,200,JSON.stringify(retrySecond.body));
+ assert.equal(retrySecond.body.id,retryFirst.body.id);
+ assert.match(retryFirst.body.recovery_code,/^[A-F0-9]{4}(?:-[A-F0-9]{4}){4}$/);
+ const wrongRecovery=await api('/api/bookings',{data:{action:'recover',id:retryFirst.body.id,code:'0000-0000-0000-0000-0000'},clientIp:'203.0.113.13'});
+ assert.equal(wrongRecovery.r.status,400);
+ const recovered=await api('/api/bookings',{data:{action:'recover',id:retryFirst.body.id,code:retryFirst.body.recovery_code},clientIp:'203.0.113.13'});
+ assert.equal(recovered.r.status,200,JSON.stringify(recovered.body));
+ assert.equal(recovered.body.id,retryFirst.body.id);
+ assert.equal((await api('/api/bookings',{cookie:recovered.cookie})).body.id,retryFirst.body.id);
+ assert.equal((await api('/api/bookings',{cookie:retryFirst.cookie})).r.status,404);
+ ids.push(retryFirst.body.id);
+ for(let attempt=0;attempt<5;attempt++){
+  const limited=await api('/api/bookings',{data:input,clientIp:'203.0.113.99'});
+  assert.equal(limited.r.status,201,JSON.stringify(limited.body));ids.push(limited.body.id);
+ }
+ const blocked=await api('/api/bookings',{data:input,clientIp:'203.0.113.99'});
+ assert.equal(blocked.r.status,429,JSON.stringify(blocked.body));
+ assert.equal(blocked.r.headers.get('retry-after'),'600');
  assert.equal(first.body.can_pay,true);
  // A malicious screenshot is rejected before any payment is recorded.
  const bad=new FormData();bad.set('reference','TEST'+Date.now());bad.set('screenshot',new Blob(['not an image'],{type:'image/png'}),'bad.png');
@@ -61,12 +83,13 @@ try{
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'reject',id:second.body.id}})).r.status,200);
  assert.equal((await api('/api/bookings',{cookie:second.cookie})).body.status,'rejected');
  assert.equal((await api('/api/bookings',{data:input})).r.status,400);
- console.log('PASS: booking pricing, invalid dates, private guest status, admin login, file validation, private screenshot access, payment submission, duplicate payment rejection, date-specific admin availability, approval, last-room conflict and rejection.');
+ console.log('PASS: booking pricing, idempotent retries, durable rate limiting, cross-device recovery, invalid dates, private guest status, admin login, file validation, private screenshot access, payment submission, duplicate payment rejection, date-specific admin availability, approval, last-room conflict and rejection.');
 }finally{
  server.kill();
  if(evidence)await db('/storage/v1/object/payment-evidence',{method:'DELETE',body:JSON.stringify({prefixes:[evidence]})});
  for(const id of ids){for(const table of ['booking_events','payments'])await db(`/rest/v1/${table}?booking_id=eq.${id}`,{method:'DELETE'});await db(`/rest/v1/bookings?id=eq.${id}`,{method:'DELETE'});}
  await db('/rest/v1/room_availability?room_type=eq.non_ac&stay_date=gte.2098-03-10&stay_date=lte.2098-03-11',{method:'DELETE'});
+ await db('/rest/v1/booking_rate_limits?client_hash=not.is.null',{method:'DELETE'});
  if(testUser?.id){await db(`/rest/v1/hotel_admins?user_id=eq.${testUser.id}`,{method:'DELETE'});await db(`/auth/v1/admin/users/${testUser.id}`,{method:'DELETE'});}
  console.log('Removed only temporary test records, screenshot and test admin account.');
 }
