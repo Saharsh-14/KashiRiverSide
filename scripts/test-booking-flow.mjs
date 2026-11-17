@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { randomUUID, randomBytes } from 'node:crypto';
+import { createHmac, randomUUID, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 const base='http://127.0.0.1:3187';
 const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!url || !key || !process.env.HOTEL_TEST_SUPABASE_URL || url !== process.env.HOTEL_TEST_SUPABASE_URL) {
+ throw new Error('Run integration tests only against a dedicated test project: set HOTEL_TEST_SUPABASE_URL to its SUPABASE_URL.');
+}
 const headers={apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json'};
 const ids=[];let testUser;let evidence;
 async function db(path,options={}){
@@ -17,7 +20,7 @@ async function api(path,{cookie='',data,form,method,idempotencyKey,clientIp='203
  const text=await r.text();let body;try{body=JSON.parse(text);}catch{body=text;}
  return {r,body,cookie:r.headers.get('set-cookie')?.split(';')[0]};
 }
-const server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3187'],{env:{...process.env,BOOKINGS_ENABLED:'true'},stdio:'ignore',windowsHide:true});
+const server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3187'],{env:{...process.env,BOOKINGS_ENABLED:'true',EMAIL_NOTIFICATIONS_ENABLED:'false'},stdio:'inherit',windowsHide:true});
 try{
  for(let i=0;i<40;i++){try{const r=await fetch(base);if(r.ok)break;}catch{}if(server.exitCode!==null)throw new Error('Test server could not start');await new Promise(r=>setTimeout(r,500));}
  const email=`hotel-test-${randomUUID()}@example.com`,password=randomBytes(24).toString('hex');
@@ -87,9 +90,14 @@ try{
 }finally{
  server.kill();
  if(evidence)await db('/storage/v1/object/payment-evidence',{method:'DELETE',body:JSON.stringify({prefixes:[evidence]})});
- for(const id of ids){for(const table of ['booking_events','payments'])await db(`/rest/v1/${table}?booking_id=eq.${id}`,{method:'DELETE'});await db(`/rest/v1/bookings?id=eq.${id}`,{method:'DELETE'});}
+ for(const id of ids){for(const table of ['booking_email_outbox','booking_events','payments'])await db(`/rest/v1/${table}?booking_id=eq.${id}`,{method:'DELETE'});await db(`/rest/v1/bookings?id=eq.${id}`,{method:'DELETE'});}
  await db('/rest/v1/room_availability?room_type=eq.non_ac&stay_date=gte.2098-03-10&stay_date=lte.2098-03-11',{method:'DELETE'});
- await db('/rest/v1/booking_rate_limits?client_hash=not.is.null',{method:'DELETE'});
+ // Remove only the test clients' own limiter entries, never other guests' limits.
+ const testClients=['203.0.113.10','203.0.113.11','203.0.113.12','203.0.113.13','203.0.113.99'];
+ for(const client of testClients)for(const purpose of ['booking-rate','booking-recovery-rate']){
+  const clientHash=createHmac('sha256',key).update(`${purpose}:${client}`).digest('hex');
+  await db(`/rest/v1/booking_rate_limits?client_hash=eq.${clientHash}`,{method:'DELETE'});
+ }
  if(testUser?.id){await db(`/rest/v1/hotel_admins?user_id=eq.${testUser.id}`,{method:'DELETE'});await db(`/auth/v1/admin/users/${testUser.id}`,{method:'DELETE'});}
  console.log('Removed only temporary test records, screenshot and test admin account.');
 }

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { failure, hash, keyedHash, sameOrigin, supabase } from "../../../lib/server";
 import { dailyAvailability } from '../../../lib/availability';
+import { deliverBookingEmails } from '../../../lib/booking-email';
 
 async function currentBooking() {
  const token=(await cookies()).get("hotel_booking")?.value;
@@ -37,6 +38,7 @@ export async function POST(request:Request) {
    const b=await currentBooking();
    if(typeof data.reference !== "string" || !/^[A-Za-z0-9]{8,40}$/.test(data.reference)) throw new Error("Enter a valid transaction reference");
    await supabase("/rest/v1/rpc/submit_payment",{method:"POST",body:JSON.stringify({p_id:b.id,p_reference:data.reference.toUpperCase()})});
+   await deliverBookingEmails(b.id).catch(() => {});
    return Response.json(await currentBooking());
   }
   const idempotencyKey=request.headers.get("idempotency-key");
@@ -73,6 +75,8 @@ export async function POST(request:Request) {
   if(!allowed)return Response.json({error:"Too many booking attempts. Please wait 10 minutes and try again."},{status:429,headers:{"Retry-After":"600"}});
   await supabase("/rest/v1/bookings",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates"},body:JSON.stringify({room_type:data.room,check_in:data.arrival,check_out:data.departure,adults:data.adults,children:data.children,extra_mattress:data.extra,guest_name:data.name.trim(),phone:data.phone,email:data.email||null,special_request:data.requests||null,policy_version:"2026-11-14",nightly_rate:room.nightly_rate,total,advance_due:Math.round(total*.3),access_hash:hash(token),idempotency_hash:idempotencyHash,recovery_hash:keyedHash("booking-recovery",rawRecoveryCode)})});
   (await cookies()).set("hotel_booking",token,{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"strict",path:"/",maxAge:60*60*24*90});
-  return Response.json({...await currentBooking(),recovery_code:recoveryCode},{status:201});
+  const created=await currentBooking();
+  await deliverBookingEmails(created.id).catch(() => {});
+  return Response.json({...created,recovery_code:recoveryCode},{status:201});
  } catch(e){return failure(e);}
 }

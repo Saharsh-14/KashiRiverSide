@@ -1,8 +1,9 @@
 import { cookies } from "next/headers";
 import { admin, failure, sameOrigin, supabase } from "../../../lib/server";
+import { deliverBookingEmails } from "../../../lib/booking-email";
 
 export async function GET() {
-  try { await admin(); const [bookings,roomTypes,availability]=await Promise.all([supabase("/rest/v1/bookings?select=id,guest_name,phone,check_in,check_out,room_type,total,advance_due,status,payments(screenshot_path,transaction_reference,claimed_amount,status)&order=created_at.desc&limit=100"),supabase("/rest/v1/room_types?select=code,inventory&order=code"),supabase("/rest/v1/room_availability?select=room_type,stay_date,available_rooms&order=stay_date&limit=500")]); return Response.json({bookings,roomTypes,availability}); }
+  try { await admin(); const [bookings,roomTypes,availability,emailJobs]=await Promise.all([supabase("/rest/v1/bookings?select=id,guest_name,phone,check_in,check_out,room_type,total,advance_due,status,payments(screenshot_path,transaction_reference,claimed_amount,status)&order=created_at.desc&limit=100"),supabase("/rest/v1/room_types?select=code,inventory&order=code"),supabase("/rest/v1/room_availability?select=room_type,stay_date,available_rooms&order=stay_date&limit=500"),process.env.EMAIL_NOTIFICATIONS_ENABLED === "true" ? supabase("/rest/v1/booking_email_outbox?select=status&status=neq.sent&limit=1000").catch(() => null) : Promise.resolve(null)]); return Response.json({bookings,roomTypes,availability,emailJobs}); }
   catch(error) { return failure(error,401); }
 }
 export async function POST(request: Request) {
@@ -16,6 +17,10 @@ export async function POST(request: Request) {
       (await cookies()).set("hotel_admin",session.access_token,{httpOnly:true,secure:process.env.NODE_ENV === "production",sameSite:"strict",path:"/",maxAge:session.expires_in});
     } else if(data.action === "logout") {
       (await cookies()).delete("hotel_admin");
+    } else if(data.action === "retry_emails") {
+      await admin();
+      if(process.env.EMAIL_NOTIFICATIONS_ENABLED !== "true" || !process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) throw new Error("Email notifications are not enabled");
+      await deliverBookingEmails(null);
     } else if(data.action === "availability") {
       const user=await admin(); const count=Number(data.availableRooms);
       if(!["ac","non_ac"].includes(data.roomType)||!/^\d{4}-\d{2}-\d{2}$/.test(data.startDate)||!/^\d{4}-\d{2}-\d{2}$/.test(data.endDate)||!Number.isInteger(count)||count<0||count>(data.roomType==="ac"?7:1)) throw new Error("Invalid availability");
@@ -26,6 +31,7 @@ export async function POST(request: Request) {
       const user = await admin();
       if(!["approve","reject"].includes(data.action)) throw new Error("Invalid action");
       await supabase("/rest/v1/rpc/review_booking",{method:"POST",body:JSON.stringify({p_id:data.id,p_admin:user,p_approve:data.action === "approve"})});
+      await deliverBookingEmails(data.id).catch(() => {});
     }
     return Response.json({ok:true});
   } catch(error) { return failure(error); }

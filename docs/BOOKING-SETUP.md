@@ -1,5 +1,27 @@
 # Booking setup
 
+## Email notifications (in progress)
+
+- Gmail SMTP credentials are configured locally and authentication was verified
+  without sending a message. Guest email remains optional.
+- Booking-status changes queue hotel and guest emails in a database outbox. The
+  application can retry pending or failed messages from the admin dashboard.
+- The outbox migration must be applied and tested in an isolated Supabase test
+  project before deployment. Email delivery remains disabled until then: set
+  `EMAIL_NOTIFICATIONS_ENABLED=true` only after that verification and production
+  configuration. Keep Gmail credentials in server-only environment variables.
+- A message left in `sending` after an interrupted delivery requires manual
+  investigation; retrying it automatically could send a duplicate. Gmail
+  acceptance is not proof that the message reached the recipient's inbox.
+- Set `HOTEL_TEST_SUPABASE_URL` to the dedicated test project's URL when running
+  `scripts/test-booking-flow.mjs`; never point destructive integration tests at
+  a database containing real bookings or availability overrides.
+- A separate test project was created in Mumbai on 2026-11-18. Its schema and
+  notification queue passed transactional SQL checks. The HTTP booking, payment,
+  recovery, and admin integration suite also passed against that test project,
+  with email sending disabled. A separate approved test queued one hotel email;
+  Gmail accepted it and the owner confirmed it arrived in the hotel inbox.
+
 ## Payment screenshot verification — 2026-11-14
 
 - Optional PNG/JPEG evidence (maximum 3 MB) is accepted with the payment reference.

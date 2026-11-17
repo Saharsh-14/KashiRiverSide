@@ -9,6 +9,17 @@
 
 ## Current Project Status
 
+- Backend follow-up (2026-11-18): manual UPI payment and hotel verification
+  confirmed by the owner. The owner chose email notifications for now and
+  deferred automatic WhatsApp notifications; email delivery testing is pending.
+  Guest email remains optional by owner decision.
+- The email outbox passed isolated database checks and the booking flow passed
+  integration tests. A single approved hotel email arrived successfully.
+  Email delivery remains disabled pending production migration and configuration.
+- The admin page now restores an existing valid session on refresh. Integration
+  test cleanup is scoped to test clients, and tests require an explicitly
+  designated isolated Supabase test project.
+
 - Availability follow-up: booking creation respects daily overrides; the guest
   status page rechecks availability before displaying QR instructions; the admin
   can inspect daily total, online limit, confirmed and vacant counts. Production

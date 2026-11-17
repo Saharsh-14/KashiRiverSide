@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { randomUUID } from "node:crypto";
 import { failure, hash, sameOrigin, supabase } from "../../../lib/server";
+import { deliverBookingEmails } from "../../../lib/booking-email";
 
 export async function POST(request: Request) {
   let path: string | null = null;
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
     }
     submissionStarted = true;
     await supabase("/rest/v1/rpc/submit_payment_evidence",{method:"POST",body:JSON.stringify({p_id:b.id,p_reference:reference.toUpperCase(),p_screenshot:path})});
+    await deliverBookingEmails(b.id).catch(() => {});
     return Response.json({ok:true});
   }catch(e){
     // Uploaded files are unreferenced on failed submissions; remove only this request's file.

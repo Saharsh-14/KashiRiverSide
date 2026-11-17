@@ -45,6 +45,8 @@ a:focus-visible, button:focus-visible, textarea:focus-visible { outline: 3px sol
 .about-editorial-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 180px); }
 .about-fact { display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #c9c0b7; padding: 20px; }
 .about-fact p { max-width: 200px; margin: 0; color: #665e57; font-size: 11px; line-height: 1.5; }
+.about-fact p { max-width: none; color: #392820; font-size: clamp(16px, 1.2vw, 20px); font-weight: 500; line-height: 1.35; }
+.about-rating-stars { display: block; margin-top: 8px; color: #fbbc04; font-family: Arial, sans-serif; font-size: 20px; line-height: 1; letter-spacing: 2px; }
 .about-fact strong { font: 500 56px/1 Manrope,sans-serif; letter-spacing: -.06em; }
 .about-fact strong small { font-size: 18px; letter-spacing: 0; }
 .about-fact-first { grid-column: 1; grid-row: 1; }

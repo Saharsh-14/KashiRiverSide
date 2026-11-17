@@ -11,8 +11,11 @@ export async function supabase(path: string, init: RequestInit = {}) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("Database connection unavailable");
-  const response = await fetch(`${url}${path}`, { ...init, cache: "no-store", headers: { apikey: key, "Content-Type": "application/json", ...init.headers }, signal: AbortSignal.timeout(15000) });
-  if (!response.ok) throw new Error("Request could not be completed. Check the details or contact the hotel.");
+  const response = await fetch(`${url}${path}`, { ...init, cache: "no-store", headers: { apikey: key, ...(key.startsWith("eyJ") ? { Authorization: `Bearer ${key}` } : {}), "Content-Type": "application/json", ...init.headers }, signal: AbortSignal.timeout(15000) });
+  if (!response.ok) {
+    console.error(`Supabase request failed: ${new URL(path, url).pathname} (${response.status})`);
+    throw new Error("Request could not be completed. Check the details or contact the hotel.");
+  }
   const text = await response.text();
   return text ? JSON.parse(text) : null;
 }
