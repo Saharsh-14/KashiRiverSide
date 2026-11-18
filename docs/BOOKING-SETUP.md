@@ -6,10 +6,15 @@
   without sending a message. Guest email remains optional.
 - Booking-status changes queue hotel and guest emails in a database outbox. The
   application can retry pending or failed messages from the admin dashboard.
-- The outbox migration must be applied and tested in an isolated Supabase test
-  project before deployment. Email delivery remains disabled until then: set
-  `EMAIL_NOTIFICATIONS_ENABLED=true` only after that verification and production
-  configuration. Keep Gmail credentials in server-only environment variables.
+- The outbox migration was tested in the isolated project and applied to the
+  hotel database. Email delivery remains disabled until the production server
+  is configured and verified. Keep Gmail credentials in server-only variables.
+- Vercel production variables are configured, with both booking and email flags
+  set to false. A protected staged production build passed, and its room-rates
+  endpoint and disabled-booking response were verified. It has not been promoted.
+- The hotel admin signed in to the staged deployment and confirmed receipt of
+  the authenticated test email sent from Vercel. The owner plans to purchase a
+  domain through GoDaddy; the custom domain is not connected yet.
 - A message left in `sending` after an interrupted delivery requires manual
   investigation; retrying it automatically could send a duplicate. Gmail
   acceptance is not proof that the message reached the recipient's inbox.

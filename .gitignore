@@ -5,6 +5,7 @@ supabase/.temp/
 .next-build/
 .next-local/
 .next-test/
+.next-journey/
 .build-backups/
 out/
 *.log

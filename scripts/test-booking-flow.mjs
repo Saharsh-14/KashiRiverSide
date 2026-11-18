@@ -9,7 +9,7 @@ if (!url || !key || !process.env.HOTEL_TEST_SUPABASE_URL || url !== process.env.
  throw new Error('Run integration tests only against a dedicated test project: set HOTEL_TEST_SUPABASE_URL to its SUPABASE_URL.');
 }
 const headers={apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json'};
-const ids=[];let testUser;let evidence;
+const ids=[];let testUser;let evidence;let originalNonAcRate;
 async function db(path,options={}){
  const r=await fetch(url+path,{...options,headers:{...headers,...options.headers}});
  if(!r.ok)throw new Error(`Test database request failed: ${r.status}`);
@@ -28,12 +28,25 @@ try{
  const uid=testUser.id;
  await db('/rest/v1/hotel_admins',{method:'POST',body:JSON.stringify({user_id:uid})});
  assert.equal((await api('/api/admin')).r.status,401);
+ assert.equal((await api('/api/admin',{data:{action:'test_email'}})).r.status,400);
  assert.equal((await api('/api/bookings')).r.status,404);
  const login=await api('/api/admin',{data:{action:'login',email,password}});assert.equal(login.r.status,200,JSON.stringify(login.body));const admin=login.cookie;
+ const historyRows=Array.from({length:101},(_,i)=>({room_type:'ac',check_in:'2099-01-01',check_out:'2099-01-02',adults:1,children:0,guest_name:`TEST HISTORY ${i}`,phone:'0000000000',policy_version:'test',nightly_rate:200000,total:200000,advance_due:60000}));
+ const history=await db('/rest/v1/bookings?select=id',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(historyRows)});
+ ids.push(...history.map(row=>row.id));
+ const allHistory=await api('/api/admin',{cookie:admin});assert.equal(allHistory.r.status,200);assert.equal(allHistory.body.bookings.filter(b=>b.guest_name.startsWith('TEST HISTORY ')).length,101);
  const input={arrival:'2098-03-10',departure:'2098-03-12',room:'non_ac',adults:2,children:0,extra:true,name:'AUTOMATED TEST ONLY',phone:'0000000000',email:'',requests:'Temporary integration test',accepted:true};
  assert.equal((await api('/api/bookings',{data:{...input,departure:input.arrival}})).r.status,400);
  async function book(){const result=await api('/api/bookings',{data:input,clientIp:'203.0.113.11'});assert.equal(result.r.status,201,JSON.stringify(result.body));ids.push(result.body.id);assert.equal(result.body.total,400000);assert.equal(result.body.advance_due,120000);return result;}
  let first=await book(),second=await book();
+ const roomRates=await db('/rest/v1/room_types?code=eq.non_ac&select=nightly_rate');originalNonAcRate=roomRates[0].nightly_rate;
+ assert.equal((await api('/api/admin',{data:{action:'rate',roomType:'non_ac',ratePaise:160000}})).r.status,400);
+ assert.equal((await api('/api/admin',{cookie:admin,data:{action:'rate',roomType:'non_ac',ratePaise:-1}})).r.status,400);
+ assert.equal((await api('/api/admin',{cookie:admin,data:{action:'rate',roomType:'non_ac',ratePaise:160000}})).r.status,200);
+ const publicRates=await api('/api/rooms');assert.equal(publicRates.r.status,200);assert.equal(publicRates.body.rooms.find(r=>r.code==='non_ac').nightly_rate,160000);
+ assert.equal((await api('/api/bookings',{cookie:first.cookie})).body.total,400000);
+ assert.equal((await api('/api/bookings',{data:{...input,quotedNightlyRate:originalNonAcRate}})).r.status,400);
+ assert.equal((await api('/api/admin',{cookie:admin,data:{action:'rate',roomType:'non_ac',ratePaise:originalNonAcRate}})).r.status,200);
  const retryKey=randomUUID();
  const retryFirst=await api('/api/bookings',{data:input,idempotencyKey:retryKey,clientIp:'203.0.113.12'});
  const retrySecond=await api('/api/bookings',{data:input,idempotencyKey:retryKey,clientIp:'203.0.113.12'});
@@ -70,28 +83,47 @@ try{
  let status=await api('/api/bookings',{cookie:first.cookie});assert.equal(status.body.status,'payment_submitted_pending_verification');
  // Duplicate submission must not create another payment.
  const duplicate=new FormData();duplicate.set('reference','DUPLICATETEST001');assert.equal((await api('/api/payments',{cookie:first.cookie,form:duplicate})).r.status,400);
- assert.equal((await api('/api/admin',{cookie:admin,data:{action:'availability',roomType:'non_ac',startDate:input.arrival,endDate:'2098-03-11',availableRooms:0}})).r.status,200);
+ assert.equal((await api('/api/admin',{cookie:admin,data:{action:'room_block',roomType:'non_ac',roomNumber:1,startDate:input.arrival,endDate:'2098-03-11',blocked:true}})).r.status,200);
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'approve',id:first.body.id}})).r.status,400);
  assert.equal((await api('/api/bookings',{data:input})).r.status,400);
- assert.equal((await api('/api/admin',{cookie:admin,data:{action:'availability',roomType:'non_ac',startDate:input.arrival,endDate:'2098-03-11',availableRooms:1}})).r.status,200);
+ assert.equal((await api('/api/admin',{cookie:admin,data:{action:'room_block',roomType:'non_ac',roomNumber:1,startDate:input.arrival,endDate:'2098-03-11',blocked:false}})).r.status,200);
  const race=await Promise.all([first,second].map(b=>api('/api/admin',{cookie:admin,data:{action:'approve',id:b.body.id}})));
  assert.deepEqual(race.map(x=>x.r.status).sort(),[200,400]);
  if(race[1].r.status===200)[first,second]=[second,first];
  const view=await api('/api/admin/availability?date='+input.arrival,{cookie:admin});
- assert.equal(view.r.status,200);assert.equal(view.body.find(x=>x.room==='non_ac').vacant,0);
- const edits=await Promise.all([api('/api/admin',{cookie:admin,data:{action:'availability',roomType:'non_ac',startDate:input.arrival,endDate:'2098-03-11',availableRooms:0}}),api('/api/admin',{cookie:admin,data:{action:'approve',id:second.body.id}})]);
- assert.equal(edits[0].r.status,200);assert.equal(edits[1].r.status,400);
+ assert.equal(view.r.status,200);assert.equal(view.body.find(x=>x.room==='non_ac').summary.vacant,0);
+ assert.equal(view.body.find(x=>x.room==='non_ac').rooms[0].bookings.length,1);
+ assert.notEqual((await api('/api/admin/availability?date='+input.arrival)).r.status,200);
+ const acBlock={action:'room_block',roomType:'ac',roomNumber:2,startDate:'2098-03-10',endDate:'2098-03-12',blocked:true};
+ assert.equal((await api('/api/admin',{cookie:admin,data:acBlock})).r.status,200);
+ const acSecondNight=await api('/api/admin/availability?date=2098-03-11',{cookie:admin});
+ assert.equal(acSecondNight.body.find(x=>x.room==='ac').rooms[1].blocks.length,1);
+ assert.deepEqual(Object.fromEntries(Object.entries(acSecondNight.body.find(x=>x.room==='ac').rooms[1].blockRange).filter(([key])=>['start_date','end_date'].includes(key))),{start_date:'2098-03-10',end_date:'2098-03-12'});
+ const acCheckout=await api('/api/admin/availability?date=2098-03-12',{cookie:admin});
+ assert.equal(acCheckout.body.find(x=>x.room==='ac').rooms[1].blocks.length,0);
+ assert.equal((await api('/api/admin',{cookie:admin,data:{...acBlock,blocked:false}})).r.status,200);
+ const edits=await Promise.all([api('/api/admin',{cookie:admin,data:{action:'room_block',roomType:'non_ac',roomNumber:1,startDate:input.arrival,endDate:'2098-03-11',blocked:true}}),api('/api/admin',{cookie:admin,data:{action:'approve',id:second.body.id}})]);
+ assert.equal(edits[0].r.status,400);assert.equal(edits[1].r.status,400);
+ const checkoutView=await api('/api/admin/availability?date='+input.departure,{cookie:admin}); assert.equal(checkoutView.body.find(x=>x.room==='non_ac').summary.vacant,1);
  status=await api('/api/bookings',{cookie:first.cookie});assert.equal(status.body.status,'confirmed');
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'approve',id:second.body.id}})).r.status,400);
  assert.equal((await api('/api/admin',{cookie:admin,data:{action:'reject',id:second.body.id}})).r.status,200);
  assert.equal((await api('/api/bookings',{cookie:second.cookie})).body.status,'rejected');
  assert.equal((await api('/api/bookings',{data:input})).r.status,400);
+ assert.notEqual((await api('/api/admin',{data:{action:'release_confirmed_room',id:first.body.id}})).r.status,200);
+ assert.equal((await api('/api/admin',{cookie:admin,data:{action:'release_confirmed_room',id:first.body.id}})).r.status,200);
+ assert.equal((await api('/api/bookings',{cookie:first.cookie})).body.status,'cancelled');
+ assert.equal((await api('/api/admin/availability?date='+input.arrival,{cookie:admin})).body.find(x=>x.room==='non_ac').summary.vacant,1);
+ const retainedPayments=await db('/rest/v1/payments?booking_id=eq.'+first.body.id+'&select=status,verified_amount');
+ assert.equal(retainedPayments[0].status,'verified'); assert.equal(retainedPayments[0].verified_amount,120000);
+ assert.notEqual((await api('/api/admin',{cookie:admin,data:{action:'release_confirmed_room',id:first.body.id}})).r.status,200);
  console.log('PASS: booking pricing, idempotent retries, durable rate limiting, cross-device recovery, invalid dates, private guest status, admin login, file validation, private screenshot access, payment submission, duplicate payment rejection, date-specific admin availability, approval, last-room conflict and rejection.');
 }finally{
  server.kill();
  if(evidence)await db('/storage/v1/object/payment-evidence',{method:'DELETE',body:JSON.stringify({prefixes:[evidence]})});
- for(const id of ids){for(const table of ['booking_email_outbox','booking_events','payments'])await db(`/rest/v1/${table}?booking_id=eq.${id}`,{method:'DELETE'});await db(`/rest/v1/bookings?id=eq.${id}`,{method:'DELETE'});}
- await db('/rest/v1/room_availability?room_type=eq.non_ac&stay_date=gte.2098-03-10&stay_date=lte.2098-03-11',{method:'DELETE'});
+ if(originalNonAcRate)await db('/rest/v1/room_types?code=eq.non_ac',{method:'PATCH',body:JSON.stringify({nightly_rate:originalNonAcRate})});
+ for(let i=0;i<ids.length;i+=100){const list=ids.slice(i,i+100).join(',');for(const table of ['booking_email_outbox','booking_events','payments'])await db(`/rest/v1/${table}?booking_id=in.(${list})`,{method:'DELETE'});await db(`/rest/v1/bookings?id=in.(${list})`,{method:'DELETE'});}
+ await db('/rest/v1/room_blocks?stay_date=gte.2098-03-10&stay_date=lte.2098-03-11',{method:'DELETE'});
  // Remove only the test clients' own limiter entries, never other guests' limits.
  const testClients=['203.0.113.10','203.0.113.11','203.0.113.12','203.0.113.13','203.0.113.99'];
  for(const client of testClients)for(const purpose of ['booking-rate','booking-recovery-rate']){

@@ -1,4 +1,4 @@
-import SiteFooter from "./components/SiteFooter";
+import RoomPrice from "./components/RoomPrice";
 import MobileMenu from "./components/MobileMenu";
 import BookingBar from "./components/BookingBar";
 import GallerySlider from "./components/GallerySlider";
@@ -101,12 +101,12 @@ export default function Home() {
         <RoomFilter />
         <div className="room-grid accommodation-list">
           {[
-            { type: "AC Room", key: "ac", image: "/assets/room-3.jpg", alt: "AC room with purple bedding", label: "THE COMFORT STAY", description: "A cool, restful room for a comfortable Varanasi stay.", price: "2,000", cooling: "Air conditioning" },
-            { type: "Non-AC Room", key: "non_ac", image: "/assets/non-ac-room.jpg", alt: "Non-AC room with blue bedding", label: "THE EASY STAY", description: "A simple, welcoming room for an unhurried stay in Kashi.", price: "1,500", cooling: "Fan" },
+            { type: "AC Room", key: "ac", image: "/assets/room-3.jpg", alt: "AC room with purple bedding", label: "THE COMFORT STAY", description: "A cool, restful room for a comfortable Varanasi stay.", cooling: "Air conditioning" },
+            { type: "Non-AC Room", key: "non_ac", image: "/assets/non-ac-room.jpg", alt: "Non-AC room with blue bedding", label: "THE EASY STAY", description: "A simple, welcoming room for an unhurried stay in Kashi.", cooling: "Fan" },
           ].map(room => <article className="accommodation-card" data-room={room.key} key={room.key}>
             <img className="accommodation-image" src={room.image} alt={room.alt} loading="lazy" />
             <div className="accommodation-intro"><p className="card-label">{room.label}</p><h3>{room.type}</h3><p>{room.description}</p></div>
-            <div className="accommodation-details"><strong>₹{room.price}<small> / night</small></strong><p>Room details</p><dl><div><dt>Comfort</dt><dd>{room.cooling}</dd></div><div><dt>Connectivity</dt><dd>Wi-Fi</dd></div><div><dt>Water</dt><dd>Hot &amp; cold</dd></div><div><dt>Guests</dt><dd>2 adults + 2 children</dd></div></dl></div>
+            <div className="accommodation-details"><RoomPrice room={room.key} /><p>Room details</p><dl><div><dt>Comfort</dt><dd>{room.cooling}</dd></div><div><dt>Connectivity</dt><dd>Wi-Fi</dd></div><div><dt>Water</dt><dd>Hot &amp; cold</dd></div><div><dt>Guests</dt><dd>2 adults + 2 children</dd></div></dl></div>
             <div className="accommodation-action"><div><strong>✧ &nbsp;Housekeeping</strong><p>Care and comfort throughout your stay.</p></div><div><strong>♧ &nbsp;Amenities</strong><p>Wi-Fi, television, and room service.</p></div><a className="button button-dark" href={`/booking?room=${room.key}`}>Book this room</a></div>
           </article>)}
         </div>
@@ -127,7 +127,7 @@ export default function Home() {
         <div className="gallery-layout"><div className="gallery-mosaic" aria-label="A glimpse of the hotel"><img src="/assets/gallery-21.jpg" alt="Reception at Kashi Riverside Stay" loading="lazy"/><img src="/assets/gallery-19.jpg" alt="Hotel corridor with Ganga Aarti artwork" loading="lazy"/><img src="/assets/room-3.jpg" alt="A guest room at Kashi Riverside Stay" loading="lazy"/></div><GallerySlider photos={gallery}/></div>
       </section>
       <section className="policy-editorial section-shell" id="policies" aria-labelledby="policy-heading">
-        <div className="policy-editorial-intro"><p className="section-kicker">Kashi Riverside Stay</p><h2 id="policy-heading">Hotel policies<br /><em>&amp; guest information.</em></h2><p>Please review the following booking and stay policies before making your reservation.</p><img src="/assets/gallery-21.jpg" alt="Reception at Kashi Riverside Stay" loading="lazy" /></div>
+        <div className="policy-editorial-intro"><p className="section-kicker">Kashi Riverside Stay</p><h2 id="policy-heading">Hotel policies<br /><em>&amp; guest information.</em></h2><p>Please review the following booking and stay policies before making your reservation.</p><img src="/assets/policy-reception.png" alt="A warm welcome at the Kashi Riverside Stay reception" loading="lazy" /></div>
         <div className="policy-editorial-grid">
           <div className="policy-stat"><p>Check-in<br />from</p><strong>1 <small>PM</small></strong></div>
           <div className="policy-stat"><p>Check-out<br />by</p><strong>11 <small>AM</small></strong></div>
@@ -137,7 +137,6 @@ export default function Home() {
       </section>
       <FloatingBooking />
 
-      <SiteFooter />
     </main>
   );
 }

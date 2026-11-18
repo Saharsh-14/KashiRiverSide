@@ -9,13 +9,34 @@
 
 ## Current Project Status
 
+- Admin dashboard redesign: overview, booking search and status filters, booking
+  details and payment review, and date-based availability controls are in place.
+  Verified against temporary data in the isolated test project; booking and
+  payment integration checks pass. Live bookings remain disabled.
+- Room rates can be updated by an authenticated admin. Guest-facing rates come
+  from the database, with a check for changed rates before submission. Existing
+  booking prices remain unchanged. Booking history is loaded across all pages.
+- Guest booking, fake UPI submission, admin API approval, guest confirmation,
+  and a guest-style confirmation email were verified against the isolated test
+  project; the owner confirmed receiving the email. The browser confirmation
+  dialog interrupted automated admin clicking, so approval was completed through
+  the authenticated admin API. Temporary records were removed.
+
 - Backend follow-up (2026-11-18): manual UPI payment and hotel verification
   confirmed by the owner. The owner chose email notifications for now and
   deferred automatic WhatsApp notifications; email delivery testing is pending.
   Guest email remains optional by owner decision.
 - The email outbox passed isolated database checks and the booking flow passed
   integration tests. A single approved hotel email arrived successfully.
-  Email delivery remains disabled pending production migration and configuration.
+  The migration is applied to the hotel database; email delivery remains
+  disabled pending production configuration and verification.
+- Production dependency audit: patched PostCSS and Sharp, with zero npm audit
+  findings after the update. Vercel builds previously failed because the project
+  used a nonstandard output directory; configuration now selects `.next` on
+  Vercel. The authorized staged deployment is ready and production secrets are
+  configured; bookings and email delivery remain disabled pending final checks.
+- The owner signed into the staged dashboard and confirmed receipt of a test
+  email sent from Vercel. The owner plans to purchase a GoDaddy domain.
 - The admin page now restores an existing valid session on refresh. Integration
   test cleanup is scoped to test clients, and tests require an explicitly
   designated isolated Supabase test project.

@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { failure, hash, keyedHash, sameOrigin, supabase } from "../../../lib/server";
-import { dailyAvailability } from '../../../lib/availability';
+import { hasRoomForStay } from '../../../lib/availability';
 import { deliverBookingEmails } from '../../../lib/booking-email';
 
 async function currentBooking() {
@@ -9,8 +9,8 @@ async function currentBooking() {
  const rows=await supabase(`/rest/v1/bookings?access_hash=eq.${hash(token)}&select=id,room_type,check_in,check_out,total,advance_due,status`);
  if(!rows.length) throw new Error("Booking not found");
  const booking=rows[0];
- const days=booking.status==='payment_pending'?await dailyAvailability(booking.room_type,booking.check_in,booking.check_out):[];
- return {...booking,can_pay:booking.status==='payment_pending'&&days.length>0&&days.every(d=>d.vacant>0)};
+ const available=booking.status==='payment_pending' ? await hasRoomForStay(booking.room_type,booking.check_in,booking.check_out) : false;
+ return {...booking,can_pay:available};
 }
 export async function GET(){try{return Response.json(await currentBooking());}catch(e){return failure(e,404);}}
 export async function POST(request:Request) {
@@ -61,13 +61,8 @@ export async function POST(request:Request) {
   if(typeof data.name!=="string"||!data.name.trim()||data.name.length>120||typeof data.phone!=="string"||!/^\+?[0-9 ()-]{10,20}$/.test(data.phone)||data.accepted!==true) throw new Error("Enter your name, phone and accept the policies");
   if(typeof data.email!=="string"||data.email.length>254||(data.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))||typeof data.requests!=="string"||data.requests.length>1000) throw new Error("Check email and special requests");
   const [room]=await supabase(`/rest/v1/room_types?code=eq.${data.room}&select=nightly_rate,inventory`);
-  const overlaps=await supabase(`/rest/v1/bookings?room_type=eq.${data.room}&status=eq.confirmed&check_in=lt.${data.departure}&check_out=gt.${data.arrival}&select=check_in,check_out`);
-  const overrides=await supabase(`/rest/v1/room_availability?room_type=eq.${data.room}&stay_date=gte.${data.arrival}&stay_date=lt.${data.departure}&select=stay_date,available_rooms`);
-  for(let day=Date.parse(data.arrival);day<Date.parse(data.departure);day+=86400000){
-   const date=new Date(day).toISOString().slice(0,10);
-   const capacity=overrides.find((a:{stay_date:string})=>a.stay_date===date)?.available_rooms ?? room.inventory;
-   if(overlaps.filter((b:{check_in:string;check_out:string})=>Date.parse(b.check_in)<=day&&Date.parse(b.check_out)>day).length>=capacity)throw new Error("Room unavailable for these dates. Please choose different dates or contact the hotel.");
-  }
+  if (data.quotedNightlyRate !== undefined && data.quotedNightlyRate !== room.nightly_rate) throw new Error("Room rates have changed. Please refresh the page and review the updated price.");
+  if(!await hasRoomForStay(data.room,data.arrival,data.departure)) throw new Error("Room unavailable for these dates. Please choose different dates or contact the hotel.");
   const total=nights*(room.nightly_rate+(data.extra?50000:0));
   const forwarded=request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   const client=forwarded||request.headers.get("x-real-ip")||"unidentified-client";

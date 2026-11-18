@@ -438,7 +438,7 @@ html.lenis { scroll-behavior: auto; }
 .policy-editorial-intro h2 { font: 500 clamp(46px, 5vw, 76px)/.95 'Cormorant Garamond',serif; letter-spacing: -.035em; margin: 0; }
 .policy-editorial-intro h2 em { font-style: italic; color: #766151; }
 .policy-editorial-intro > p:not(.section-kicker) { max-width: 330px; line-height: 1.7; margin: 26px 0 40px; }
-.policy-editorial-intro img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; margin-top: auto; }
+.policy-editorial-intro img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; object-position: center 60%; margin-top: auto; }
 .policy-editorial-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; border-top: 1px solid #bfb4aa; }
 .policy-stat { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; min-height: 210px; padding: 24px 18px; border-bottom: 1px solid #bfb4aa; }
 .policy-stat:nth-child(odd) { border-right: 1px solid #bfb4aa; }
